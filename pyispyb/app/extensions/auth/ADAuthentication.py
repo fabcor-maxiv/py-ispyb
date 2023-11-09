@@ -78,16 +78,17 @@ class ADAuthentication(AbstractAuthentication):
                 f"(SAMAccountname={login})", 
                 ['mail', 'uidNumber', 'sn', 'givenName', 'telephoneNumber', 'memberOf'])[0][1]
             log.debug(res)
+            print(res)
 
             def get_value(v: str):
                 if v in res:
                     return res[v][0]
                 return None
             
-            group_list = get_value("memberOf")
-            print(group_list)
-            #for group in group_list:
-            #    groups.append(group)
+            group_list = res["memberOf"]
+            for group in group_list:
+                print(group)
+                groups += [group]
 
             return models.Person(
                 login=login,
