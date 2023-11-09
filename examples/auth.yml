@@ -16,6 +16,14 @@ AUTH:
         LDAP_URI: "ldap://your_ldap"
         LDAP_BASE_INTERNAL: "ou=People,dc=esrf,dc=fr"
         LDAP_BASE_GROUPS: "ou=Pxwebgroups,dc=esrf,dc=fr"
+  - ad:
+      ENABLED: true
+      AUTH_MODULE: "pyispyb.app.extensions.auth.ADAuthentication"
+      AUTH_CLASS: "ADAuthentication"
+      CONFIG:
+        AD_URI: "ldap://your_ldap"
+        AD_BASE_INTERNAL: "ou=People,dc=esrf,dc=fr"
+        AD_BASE_EXTERNAL: "ou=Pxwebgroups,dc=esrf,dc=fr"
   - dummy: # /!\/!\/!\ ONLY USE FOR TESTS /!\/!\/!\
       ENABLED: false
       AUTH_MODULE: "pyispyb.app.extensions.auth.DummyAuthentication"
