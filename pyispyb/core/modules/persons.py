@@ -62,7 +62,7 @@ def get_persons(
         query = query.populate_existing()
 
     if proposal:
-        query = query.filter(models.Proposal.propsal == proposal)
+        query = query.filter(models.Proposal.proposal == proposal)
 
     if sessionId:
         metadata["sessions"] = func.count(models.BLSession.sessionId)
