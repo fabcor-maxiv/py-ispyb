@@ -66,8 +66,8 @@ class ADAuthentication(AbstractAuthentication):
 
         try:
             ad_conn = ldap.initialize(self.ad_uri)
-        except Exception as exc:  # TODO Check actual exception type
-            log.exception("AD login: can not initialize connection %s" % exc)
+        except Exception:
+            log.exception("AD login: can not initialize connection")
             return None
 
         ad_conn.protocol_version = ldap.VERSION3
