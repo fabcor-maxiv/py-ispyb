@@ -37,7 +37,7 @@ class ADAuthentication(AbstractAuthentication):
         AbstractAuthentication.__init__(self)
 
         self.ad_conn = None
-        self.ad_base_auth = None
+        self.ad_dn = None
         self.ad_base_internal = None
         self.ad_uri = None
         self.ad_domain = None
@@ -49,9 +49,9 @@ class ADAuthentication(AbstractAuthentication):
             config (dict): plugin configuration from file
         """
         self.ad_uri = config["AD_URI"]
-        self.ad_base_auth = config["AD_BASE_AUTH"]
+        self.ad_dn = config["AD_DN"]
         self.ad_base_internal = "cn=Users,dc=maxlab,dc=lu,dc=se"
-        self.ad_domain = config["AD_USERPRINCIPALNAMEDOMAIN"]
+        self.ad_domain = config["AD_DOMAIN"]
 
     def authenticate_by_login(
         self, login: str, password: str
@@ -63,17 +63,17 @@ class ADAuthentication(AbstractAuthentication):
                 f"AD login: try to authenticate user `{login}` "
             )
             self.ad_conn = ldap.initialize(self.ad_uri)
-            search_str = login + self.ad_domain 
+            search_str = login + "@" + self.ad_domain 
             self.ad_conn.protocol_version = ldap.VERSION3
             self.ad_conn.set_option(ldap.OPT_REFERRALS, 0)
             self.ad_conn.simple_bind_s(search_str, password)
             log.debug("user authenticated... waiting to have all the attributes")
             print("user authenticated... waiting to have all the attributes")
             # self.ad_conn.simple_bind_s(
-            #     f"cn={login},{self.ad_base_auth}", password
+            #     f"cn={login},{self.ad_dn}", password
             # )
             res = self.ad_conn.search_s(
-                self.ad_base_auth,
+                self.ad_dn,
                 ldap.SCOPE_SUBTREE,
                 f"(SAMAccountname={login})", 
                 ['mail', 'uidNumber', 'sn', 'givenName', 'telephoneNumber', 'memberOf'])[0][1]
@@ -122,10 +122,10 @@ class ADAuthentication(AbstractAuthentication):
             search_filter = "(samAccountName=%s)" % username
             attrs = ["*"]
             #search_str = self.ldap_id + "=" + username + "," + self.ldap_base_internal
-            search_str = username + self.ad_domain 
+            search_str = username + "@" + self.ad_domain 
             self.ad_conn.simple_bind_s(search_str, password)
             result = self.ad_conn.search_s(
-                self.ad_base_auth,
+                self.ad_dn,
                 ldap.SCOPE_SUBTREE,
                 search_filter,
                 attrs,
