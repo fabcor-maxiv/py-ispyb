@@ -48,7 +48,7 @@ class ADAuthentication(AbstractAuthentication):
         Args:
             config (dict): plugin configuration from file
         """
-        self.ad_base_dn = config["AD_BASE_DN"]
+        self.ad_base_dn = config["AD_DN"]
         self.ad_domain = config["AD_DOMAIN"]
         self.ad_uri = config["AD_URI"]
 
@@ -67,7 +67,7 @@ class ADAuthentication(AbstractAuthentication):
         try:
             ad_conn = ldap.initialize(self.ad_uri)
         except Exception as exc:  # TODO Check actual exception type
-            log.exception("AD login: can not initialize connection")
+            log.exception("AD login: can not initialize connection %s" % exc)
             return None
 
         ad_conn.protocol_version = ldap.VERSION3
@@ -107,64 +107,3 @@ class ADAuthentication(AbstractAuthentication):
             givenName=get_value("givenName"),
             phoneNumber=get_value("telephoneNumber"),
         )
-
-
-    # TODO Do we need this?
-    def get_user_and_groups(
-        self, username: str | None, password: str | None, _token: str | None
-    ) -> tuple[str | None, list[str] | None]:
-        """Return username and groups associated to the user.
-
-        Args:
-            username (string): auth username
-            password (string): auth password
-            _token (string): auth token (unused)
-        Returns:
-            username, groups
-        """
-
-        username = username.strip()
-
-        msg = "AD login: try to authenticate user `%s`" % username
-        log.debug(msg)
-
-        if not username:
-            log.debug("AD login: can not authenticate without username")
-            return None, None
-
-        groups = None
-        group_list = None
-        who = f"{username}@{self.ad_domain}"
-        search_filter = f"(samAccountName={username})"
-        attrs = ["*"]
-
-        msg = "AD login: try to authenticate user `%s`" % who
-        log.debug(msg)
-
-        try:
-            ad_conn = ldap.initialize(self.ad_uri)
-        except Exception as exc:  # TODO Check actual exception type
-            log.exception("AD login: can not initialize connection")
-            return None, None
-
-        try:
-            ad_conn.simple_bind_s(search_str, password)
-            result = ad_conn.search_s(
-                self.ad_base_dn,
-                ldap.SCOPE_SUBTREE,
-                search_filter,
-                attrs,
-            )
-        except ldap.INVALID_CREDENTIALS as ex:
-            msg = "AD login: unable to authenticate user `%s`" % who
-            log.exception(msg)
-            return None, None
-        
-        group_list = result[0][1]["memberOf"]
-        for group in group_list:
-            groups.append(group)
-
-        if user is None or groups is None:
-            return None, None
-
-        return user, groups
