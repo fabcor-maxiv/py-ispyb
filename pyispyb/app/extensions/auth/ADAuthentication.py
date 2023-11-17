@@ -35,8 +35,6 @@ log = logging.getLogger(__name__)
 class ADAuthentication(AbstractAuthentication):
 
     def __init__(self):
-        super().__init__(self)  # TODO not entirely sure we need this since there is no __init__
-
         # Configuration settings
         self.ad_base_dn = ""  # base DN
         self.ad_domain = ""
