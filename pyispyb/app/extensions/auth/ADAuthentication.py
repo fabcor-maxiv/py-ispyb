@@ -81,7 +81,7 @@ class ADAuthentication(AbstractAuthentication):
             return None
 
         log.debug("AD login: user authenticated... waiting to have all the attributes")
-        log.info(f"***********{self.ad_base_dn}")
+
         try:
             res = ad_conn.search_s(
                 self.ad_base_dn,
