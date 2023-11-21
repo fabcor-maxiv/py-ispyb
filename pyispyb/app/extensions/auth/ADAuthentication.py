@@ -71,6 +71,8 @@ class ADAuthentication(AbstractAuthentication):
 
         ad_conn.protocol_version = ldap.VERSION3
         ad_conn.set_option(ldap.OPT_REFERRALS, 0)
+        ad_conn.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
+        ad_conn.set_option(ldap.OPT_X_TLS_DEMAND, True)
 
         try:
             ad_conn.simple_bind_s(who, password)
