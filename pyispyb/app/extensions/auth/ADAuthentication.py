@@ -18,7 +18,6 @@
 
 
 import logging
-import sys
 from typing import Any, Optional
 import ldap
 
@@ -37,7 +36,7 @@ class ADAuthentication(AbstractAuthentication):
 
     def __init__(self):
         # Configuration settings
-        self.ad_base_dn = ""  # base DN
+        self.ad_base_dn = ""
         self.ad_domain = ""
         self.ad_uri = ""
 
@@ -64,7 +63,7 @@ class ADAuthentication(AbstractAuthentication):
         log.debug("AD login: try to authenticate user `%s`" % who)
 
         try:
-            ad_conn = ldap.initialize(self.ad_uri, trace_level=1, trace_file=sys.stdout)
+            ad_conn = ldap.initialize(self.ad_uri)
         except Exception:
             log.exception("AD login: can not initialize connection")
             return None
