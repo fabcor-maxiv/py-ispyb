@@ -65,8 +65,6 @@ class Settings(BaseSettings):
 
     cors: bool = True
 
-    log_level = str
-
     simulation_config: str = None
 
     
