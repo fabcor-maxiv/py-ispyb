@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import or_, func, distinct
 from sqlalchemy.orm import joinedload, contains_eager
@@ -9,6 +10,7 @@ from ...app.extensions.database.utils import Paged, page, with_metadata, order
 from ...app.extensions.database.middleware import db
 from ...app.extensions.database.definitions import with_authorization
 from ...core.modules.utils import encode_external_id
+from ..schemas import protein as schema
 
 
 ORDER_BY_MAP = {
@@ -16,6 +18,20 @@ ORDER_BY_MAP = {
     "acronym": models.Protein.acronym,
     "name": models.Protein.name,
 }
+
+
+def create_protein(protein: schema.ProteinCreate) -> models.Protein:
+    protein_dict = protein.dict()
+    protein_dict["name"] = protein.name
+    protein_dict["acronym"] = protein.acronym
+    protein_dict["bltimeStamp"] = datetime.now()
+
+    protein = models.Protein(**protein_dict)
+    db.session.add(protein)
+    db.session.commit()
+
+    new_protein = get_proteins(proteinId=protein.proteinId, skip=0, limit=1)
+    return new_protein.first
 
 
 def get_proteins(

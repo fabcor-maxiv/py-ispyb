@@ -63,9 +63,13 @@ class Settings(BaseSettings):
     token_exp_time: int  # in minutes
     secret_key: str
 
-    cors: bool = False
+    cors: bool = True
+
+    log_level = str
 
     simulation_config: str = None
+
+    
 
     # Map file paths in the database to a different root directory
     path_map: str = None

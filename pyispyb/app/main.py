@@ -39,6 +39,34 @@ async def expire_onetime_tokens() -> None:
     await expire_ontime_tokens_periodically()
 
 
+if settings.log_level is not None:
+    match settings.log_level:
+        case "FATAL":
+            logger.setLevel(logging.FATAL)
+            for handler in logger.handlers:
+                handler.setLevel(logging.FATAL)
+        case "ERROR":
+            logger.setLevel(logging.ERROR)
+            for handler in logger.handlers:
+                handler.setLevel(logging.ERROR)
+        case "WARN":
+            logger.setLevel(logging.WARN)
+            for handler in logger.handlers:
+                handler.setLevel(logging.WARN)
+        case "INFO":
+            logger.setLevel(logging.INFO)
+            for handler in logger.handlers:
+                handler.setLevel(logging.INFO)
+        case "DEBUG":
+            logger.setLevel(logging.DEBUG)
+            for handler in logger.handlers:
+                handler.setLevel(logging.DEBUG)
+        case "NOTSET":
+            logger.setLevel(logging.NOTSET)
+            for handler in logger.handlers:
+                handler.setLevel(logging.NOTSET)
+
+
 def enable_cors() -> None:
     app.add_middleware(
         CORSMiddleware,
@@ -81,6 +109,7 @@ def custom_openapi() -> dict[str, Any]:
 
 
 setattr(app, "openapi", custom_openapi)
+
 
 auth_provider.init_app(app)
 base_routes.init_app(app, prefix=settings.api_root)

@@ -20,6 +20,12 @@ class ConcentrationType(BaseModel):
         orm_mode = True
 
 
+class ProteinCreate(BaseModel):
+    proposalId: int
+    name: str = Field(title="Name")
+    acronym: str = Field(title="Acronym")
+
+
 class ProteinMetaData(BaseModel):
     pdbs: Optional[int] = Field(description="Number of attached pdbs")
     crystals: Optional[int] = Field(description="Number of child crystals")
