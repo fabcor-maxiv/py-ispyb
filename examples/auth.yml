@@ -1,4 +1,12 @@
 AUTH:
+  - ad:
+      ENABLED: true
+      AUTH_MODULE: "pyispyb.app.extensions.auth.ADAuthentication"
+      AUTH_CLASS: "ADAuthentication"
+      CONFIG:
+        AD_URI: "ldap://your_ldap"
+        AD_DN: "ou=People,dc=esrf,dc=fr"
+        AD_DOMAIN: "esrf.fr"
   - keycloak:
       ENABLED: true
       AUTH_MODULE: "pyispyb.app.extensions.auth.KeycloakDBGroupsAuthentication"
@@ -16,14 +24,6 @@ AUTH:
         LDAP_URI: "ldap://your_ldap"
         LDAP_BASE_INTERNAL: "ou=People,dc=esrf,dc=fr"
         LDAP_BASE_GROUPS: "ou=Pxwebgroups,dc=esrf,dc=fr"
-  - ad:
-      ENABLED: true
-      AUTH_MODULE: "pyispyb.app.extensions.auth.ADAuthentication"
-      AUTH_CLASS: "ADAuthentication"
-      CONFIG:
-        AD_URI: "ldap://your_ldap"
-        AD_DN: "ou=People,dc=maxiv,dc=lu,dc=se"
-        AD_DOMAIN: "maxlab.lu.se"
   - dummy: # /!\/!\/!\ ONLY USE FOR TESTS /!\/!\/!\
       ENABLED: false
       AUTH_MODULE: "pyispyb.app.extensions.auth.DummyAuthentication"
