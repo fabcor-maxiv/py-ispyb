@@ -82,7 +82,6 @@ def custom_openapi() -> dict[str, Any]:
 
 setattr(app, "openapi", custom_openapi)
 
-
 auth_provider.init_app(app)
 base_routes.init_app(app, prefix=settings.api_root)
 core_routes.init_app(app, prefix=settings.api_root)

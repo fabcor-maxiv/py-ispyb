@@ -79,7 +79,7 @@ PROTEIN_UPDATE_EXCLUDED = {}
         400: {"description": "Could not update protein"},
     },
 )
-def update_shipping(
+def update_protein(
     proteinId: int,
     protein: make_optional(
         schema.ProteinCreate,
