@@ -111,7 +111,6 @@ def test_session_persons_sync(with_db_session):
     # Iterate over the session
     sessions_in_db = 0
     for json_session in test_data_proposal_userportalsync_create["sessions"]:
-
         try:
             if json_session["externalId"] is not None:
                 sessions = get_sessions(
