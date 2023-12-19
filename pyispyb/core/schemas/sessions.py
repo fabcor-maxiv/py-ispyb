@@ -6,7 +6,10 @@ from pydantic import BaseModel, Field
 
 
 class SessionMetaData(BaseModel):
+    samples: Optional[int] = Field(description="Number of samples")
     datacollections: Optional[int] = Field(description="Number of datacollections")
+    energy_scans: Optional[int] = Field(description="Number of energy scans")
+    xrf_scans: Optional[int] = Field(description="Number of XRF scans")
     uiGroups: Optional[list[str]] = Field(description="UI groups for this session")
     persons: int = Field(
         description="Number of people registered on this session (via SessionHasPerson)"
