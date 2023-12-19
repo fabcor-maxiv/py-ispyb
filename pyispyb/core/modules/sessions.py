@@ -195,7 +195,6 @@ def get_sessionHasPerson(
     limit: int,
     sessionId: Optional[int] = None,
 ) -> Paged[models.SessionHasPerson]:
-
     query = db.session.query(models.SessionHasPerson).options(
         joinedload(models.SessionHasPerson.Person)
     )
