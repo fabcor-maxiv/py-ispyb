@@ -33,7 +33,6 @@ log = logging.getLogger(__name__)
 
 
 class ADAuthentication(AbstractAuthentication):
-
     def __init__(self):
         # Configuration settings
         self.ad_base_dn = ""
@@ -50,8 +49,9 @@ class ADAuthentication(AbstractAuthentication):
         self.ad_domain = config["AD_DOMAIN"]
         self.ad_uri = config["AD_URI"]
 
-    def authenticate_by_login(self, login: str, password: str) -> Optional[models.Person]:
-
+    def authenticate_by_login(
+        self, login: str, password: str
+    ) -> Optional[models.Person]:
         log.debug("AD login: try to authenticate user `%s`" % login)
         login = login.strip()
 
@@ -85,8 +85,8 @@ class ADAuthentication(AbstractAuthentication):
             res = ad_conn.search_s(
                 self.ad_base_dn,
                 ldap.SCOPE_SUBTREE,
-                f"(SAMAccountname={login})", 
-                ['mail', 'uidNumber', 'sn', 'givenName', 'telephoneNumber', 'memberOf'],
+                f"(SAMAccountname={login})",
+                ["mail", "uidNumber", "sn", "givenName", "telephoneNumber", "memberOf"],
             )[0][1]
         except ldap.INVALID_CREDENTIALS:
             log.exception("AD login: unable to authenticate user `%s`" % login)
@@ -98,7 +98,7 @@ class ADAuthentication(AbstractAuthentication):
             if v in res:
                 return res[v][0]
             return None
-        
+
         return models.Person(
             login=login,
             emailAddress=get_value("mail"),

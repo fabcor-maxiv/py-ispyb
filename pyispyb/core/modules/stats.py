@@ -65,7 +65,6 @@ def get_breakdown(
     beamLineName: Optional[str] = None,
     runId: Optional[str] = None,
 ) -> schema.Breakdown:
-
     if session or sessionId:
         info = db.session.query(
             models.BLSession.startDate,
@@ -694,7 +693,6 @@ def get_errors(
                     last_line = get_last_line(log_path)
                     if last_line:
                         if last_line not in totals[row["experimentType"]].messages:
-
                             replaced = False
                             for message in totals[
                                 row["experimentType"]
