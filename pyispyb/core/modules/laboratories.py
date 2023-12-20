@@ -38,7 +38,6 @@ def get_laboratories(
 
 
 def create_laboratory(laboratory: schema.Laboratory) -> models.Laboratory:
-
     laboratory_dict = laboratory.dict()
 
     laboratory = models.Laboratory(**laboratory_dict)

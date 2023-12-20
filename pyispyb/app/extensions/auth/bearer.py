@@ -67,7 +67,6 @@ def permission_required(operator, permissions):
         raise Exception("operator must be 'any' or 'all'.")
 
     async def res():
-
         user_permissions: list[str] = g.permissions
         if user_permissions is None:
             user_permissions = []
