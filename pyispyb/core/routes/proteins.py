@@ -31,7 +31,7 @@ def get_proteins(
         proposal=proposal,
         search=search,
         sort_order=sort_order,
-        **page
+        **page,
     )
 
 
@@ -54,7 +54,7 @@ def get_protein(
         return proteins.first
     except IndexError:
         raise HTTPException(status_code=404, detail="Protein not found")
-    
+
 
 @router.post(
     "",

@@ -44,7 +44,6 @@ def proposal_authorisation(proposal_id: str):
 
 
 def session_authorisation(session_id: str):
-
     permissions = g.permissions
     login = g.login
 

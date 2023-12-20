@@ -82,7 +82,6 @@ def get_proposalHasPerson(
     limit: int,
     proposalId: Optional[int] = None,
 ) -> Paged[models.ProposalHasPerson]:
-
     query = db.session.query(models.ProposalHasPerson).options(
         joinedload(models.ProposalHasPerson.Person)
     )
