@@ -131,7 +131,9 @@ def get_sessions(
 
     dataCollections = (
         db.session.query(
-            func.count(models.DataCollection.dataCollectionId).label("count"),
+            func.count(models.DataCollection.dataCollectionId.distinct()).label(
+                "count"
+            ),
             models.DataCollectionGroup.sessionId,
         )
         .join(models.DataCollectionGroup)
@@ -150,11 +152,68 @@ def get_sessions(
             "count"
         ]
 
+    energyScans = (
+        db.session.query(
+            func.count(models.EnergyScan.energyScanId).label("count"),
+            models.EnergyScan.sessionId,
+        )
+        .filter(
+            models.EnergyScan.sessionId.in_([result.sessionId for result in results])
+        )
+        .group_by(models.EnergyScan.sessionId)
+        .all()
+    )
+    energyScanCount = {}
+    for energyScan in energyScans:
+        energyScanDict = energyScan._asdict()
+        energyScanCount[energyScanDict["sessionId"]] = energyScanDict["count"]
+
+    xrfScans = (
+        db.session.query(
+            func.count(models.XFEFluorescenceSpectrum.xfeFluorescenceSpectrumId).label(
+                "count"
+            ),
+            models.XFEFluorescenceSpectrum.sessionId,
+        )
+        .filter(
+            models.XFEFluorescenceSpectrum.sessionId.in_(
+                [result.sessionId for result in results]
+            )
+        )
+        .group_by(models.XFEFluorescenceSpectrum.sessionId)
+        .all()
+    )
+    xrfScanCount = {}
+    for xrfScan in xrfScans:
+        xrfScanDict = xrfScan._asdict()
+        xrfScanCount[xrfScanDict["sessionId"]] = xrfScanDict["count"]
+
+    samples = (
+        db.session.query(
+            func.count(models.DataCollectionGroup.sessionId.distinct()).label("count"),
+            models.DataCollectionGroup.sessionId,
+        )
+        .filter(
+            models.DataCollectionGroup.sessionId.in_(
+                [result.sessionId for result in results]
+            )
+        )
+        .group_by(models.DataCollectionGroup.sessionId)
+        .all()
+    )
+    sampleCount = {}
+    for sample in samples:
+        sampleDict = sample._asdict()
+        sampleCount[sampleDict["sessionId"]] = sampleDict["count"]
+
     for result in results:
         result._metadata["uiGroups"] = groups_from_beamlines([result.beamLineName])
+        result._metadata["samples"] = sampleCount.get(result.sessionId, 0)
         result._metadata["datacollections"] = dataCollectionCount.get(
             result.sessionId, 0
         )
+        result._metadata["energy_scans"] = energyScanCount.get(result.sessionId, 0)
+        result._metadata["xrf_scans"] = xrfScanCount.get(result.sessionId, 0)
         result._metadata["sessionTypes"] = (
             result._metadata["sessionTypes"].split(",")
             if result._metadata["sessionTypes"]
