@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     token_exp_time: int  # in minutes
     secret_key: str
 
-    cors: bool = False
+    cors: bool = True
 
     simulation_config: str = None
 
