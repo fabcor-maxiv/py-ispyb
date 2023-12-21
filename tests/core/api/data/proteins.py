@@ -1,7 +1,7 @@
 from tests.core.api.utils.apitest import ApiTestElem, ApiTestExpected, ApiTestInput
 
 
-test_data_proteins_list = [
+test_route_proteins_list = [
     ApiTestElem(
         name="List proteins",
         input=ApiTestInput(
@@ -33,6 +33,28 @@ test_data_proteins_list = [
         ),
         expected=ApiTestExpected(
             code=200,
+        ),
+    ),
+]
+
+test_data_protein_create = {
+    "name": "MyNewProtein",
+    "acronym": "myNewProt",
+    "proposalId": 1,
+}
+
+test_route_protein_create = [
+    ApiTestElem(
+        name="Create protein",
+        input=ApiTestInput(
+            login="abcd",
+            permissions=["abcd"],
+            route="/proteins",
+            method="post",
+            payload=test_data_protein_create,
+        ),
+        expected=ApiTestExpected(
+            code=201,
         ),
     ),
 ]

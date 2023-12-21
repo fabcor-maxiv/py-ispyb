@@ -2,6 +2,7 @@ black
 flake8
 pytest
 pytest-cov
+pytest-html
 requests
 jsondiff
 httpx>=0.23.0 #required for FastAPI tests
