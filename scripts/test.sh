@@ -2,5 +2,5 @@
 
 export ISPYB_ENVIRONMENT="test"
 
-pytest
+python -m pytest
 flake8
