@@ -14,7 +14,6 @@ def custom_generate_unique_id(route: APIRoute):
 
 class AuthenticatedAPIRouter(BaseRouter):
     def __init__(self, *args, **kwargs):
-
         deps = kwargs.pop("dependencies", [])
 
         super().__init__(

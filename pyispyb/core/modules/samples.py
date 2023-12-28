@@ -616,7 +616,6 @@ def get_components(
     limit: int,
     proposal: Optional[str] = None,
 ) -> Paged[models.Component]:
-
     query = db.session.query(models.Component).join(models.Proposal)
 
     if proposal:
@@ -638,7 +637,6 @@ def get_components(
 
 
 def get_component_types() -> list[models.ComponentType]:
-
     query = db.session.query(models.ComponentType)
     results = query.all()
 

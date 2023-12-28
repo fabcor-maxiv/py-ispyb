@@ -38,7 +38,6 @@ def create_ssx_datacollection(
     event_chains_list = data_collection_dict.pop("event_chains")
 
     try:
-
         # Check that DCG exists
         count_dcg = (
             db.session.query(models.DataCollectionGroup)
@@ -144,7 +143,6 @@ def create_ssx_datacollectiongroup(
     sampleId = datacollectiongroup_dict.pop("sampleId")
 
     try:
-
         sessionId = datacollectiongroup_dict["sessionId"]
         try:
             session = get_sessions(sessionId=sessionId, skip=0, limit=1).first
@@ -275,7 +273,6 @@ def create_ssx_datacollectiongroup(
 def create_ssx_datacollection_processing(
     dataCollectionId: int, data: schema.SSXDataCollectionProcessingCreate
 ) -> int:
-
     program = models.AutoProcProgram(
         dataCollectionId=dataCollectionId,
         processingCommandLine=data.processingCommandLine,
@@ -397,7 +394,6 @@ async def get_ssx_datacollection_processing_stats(
 async def get_ssx_datacollection_processing_cells(
     dataCollectionId: int,
 ) -> schema.SSXDataCollectionProcessingCells | None:
-
     attachments: list[
         models.AutoProcProgramAttachment
     ] = get_ssx_datacollection_processing_attachments_results([dataCollectionId])
