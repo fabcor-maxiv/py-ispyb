@@ -19,7 +19,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with py-ispyb. If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 __license__ = "LGPLv3+"
 
 from typing import Optional

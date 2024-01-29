@@ -367,9 +367,9 @@ def parse_file_as_sync(type_: Type[T], path: str, validate: bool = True) -> T | 
 async def get_ssx_datacollection_processing_stats(
     dataCollectionIds: list[int],
 ) -> list[schema.SSXDataCollectionProcessingStats]:
-    attachments: list[
-        models.AutoProcProgramAttachment
-    ] = get_ssx_datacollection_processing_attachments_results(dataCollectionIds)
+    attachments: list[models.AutoProcProgramAttachment] = (
+        get_ssx_datacollection_processing_attachments_results(dataCollectionIds)
+    )
 
     res: list[schema.SSXDataCollectionProcessingStats] = []
 
@@ -394,9 +394,9 @@ async def get_ssx_datacollection_processing_stats(
 async def get_ssx_datacollection_processing_cells(
     dataCollectionId: int,
 ) -> schema.SSXDataCollectionProcessingCells | None:
-    attachments: list[
-        models.AutoProcProgramAttachment
-    ] = get_ssx_datacollection_processing_attachments_results([dataCollectionId])
+    attachments: list[models.AutoProcProgramAttachment] = (
+        get_ssx_datacollection_processing_attachments_results([dataCollectionId])
+    )
 
     for attachment in attachments:
         if attachment.fileName == "ssx_cells.json":
