@@ -40,6 +40,7 @@ app.add_middleware(GlobalsMiddleware)  # <-- This line is necessary
 
 Then just use it. ;-)
 """
+
 from contextvars import ContextVar, Token
 from typing import Any, Dict
 

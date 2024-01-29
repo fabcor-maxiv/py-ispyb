@@ -275,9 +275,11 @@ def _compute_histogram(data: np.ndarray) -> Tuple[np.ndarray, list]:
 
     hist, bins = np.histogram(
         clean_data.flatten(),
-        bins=np.arange(np.min(clean_data), np.max(clean_data), 1)
-        if np.max(clean_data) <= 300
-        else 300,
+        bins=(
+            np.arange(np.min(clean_data), np.max(clean_data), 1)
+            if np.max(clean_data) <= 300
+            else 300
+        ),
     )
     return hist, bins.tolist()
 

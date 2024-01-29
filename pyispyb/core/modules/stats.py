@@ -308,9 +308,11 @@ def get_breakdown(
             schema.BreakdownPlottable(
                 title="energy" if plottable == "wavelength" else plottable,
                 data=[
-                    to_energy(row[plottable])
-                    if plottable == "wavelength"
-                    else row[plottable]
+                    (
+                        to_energy(row[plottable])
+                        if plottable == "wavelength"
+                        else row[plottable]
+                    )
                     for row in results["dc"]
                 ],
             )
@@ -703,11 +705,11 @@ def get_errors(
                                     replaced = True
 
                             if not replaced:
-                                totals[row["experimentType"]].messages[
-                                    last_line
-                                ] = schema.ExperimentTypeMessages(
-                                    message=last_line,
-                                    count=0,
+                                totals[row["experimentType"]].messages[last_line] = (
+                                    schema.ExperimentTypeMessages(
+                                        message=last_line,
+                                        count=0,
+                                    )
                                 )
 
                         totals[row["experimentType"]].messages[last_line].count += 1
