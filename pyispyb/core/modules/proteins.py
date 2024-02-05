@@ -2,7 +2,7 @@ from typing import Optional
 from datetime import datetime
 
 from sqlalchemy import or_, func, distinct
-from sqlalchemy.orm import joinedload, contains_eager
+from sqlalchemy.orm import contains_eager
 from ispyb import models
 
 
@@ -55,7 +55,6 @@ def get_proteins(
 
     query = (
         db.session.query(models.Protein, *metadata.values())
-        .options(joinedload(models.Protein.Proposal))
         .join(models.Proposal)
         # .outerjoin(
         #     models.ConcentrationType,

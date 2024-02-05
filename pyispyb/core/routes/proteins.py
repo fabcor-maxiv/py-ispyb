@@ -26,6 +26,7 @@ def get_proteins(
     sort_order: dict = Depends(order_by_factory(crud.ORDER_BY_MAP, "ProteinOrder")),
 ) -> Paged[models.BLSample]:
     """Get a list of proteins"""
+    logging.info(f"get_proteins for proposal {proposal}")
     return crud.get_proteins(
         proteinId=proteinId,
         proposal=proposal,
