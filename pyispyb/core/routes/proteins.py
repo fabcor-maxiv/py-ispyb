@@ -73,7 +73,7 @@ PROTEIN_UPDATE_EXCLUDED = {}
 
 
 @router.patch(
-    "/{shippingId}",
+    "/{proteinId}",
     response_model=schema.Protein,
     responses={
         404: {"description": "No such protein"},
@@ -83,7 +83,7 @@ PROTEIN_UPDATE_EXCLUDED = {}
 def update_protein(
     proteinId: int,
     protein: make_optional(
-        schema.ProteinCreate,
+        schema.Protein,
         exclude=PROTEIN_UPDATE_EXCLUDED,
     ),
 ):

@@ -5,8 +5,14 @@ from sqlalchemy import or_, func, distinct
 from sqlalchemy.orm import contains_eager
 from ispyb import models
 
+from ...app.extensions.database.utils import (
+    Paged,
+    page,
+    update_model,
+    with_metadata,
+    order,
+)
 
-from ...app.extensions.database.utils import Paged, page, with_metadata, order
 from ...app.extensions.database.middleware import db
 from ...app.extensions.database.definitions import with_authorization
 from ...core.modules.utils import encode_external_id
@@ -136,3 +142,13 @@ def get_proteins(
         result._metadata["datacollections"] = dc_counts.get(result.proteinId, 0)
 
     return Paged(total=total, results=results, skip=skip, limit=limit)
+
+
+def update_protein(proteinId: int, protein: schema.Protein) -> models.Protein:
+    protein_dict = protein.dict(exclude_unset=True)
+    new_protein = get_proteins(proteinId=proteinId, skip=0, limit=1).first
+
+    update_model(new_protein, protein_dict)
+    db.session.commit()
+
+    return get_proteins(proteinId=proteinId, skip=0, limit=1).first
