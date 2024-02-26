@@ -20,6 +20,8 @@ sqlparse
 
 mysql-connector-python==8.0.29
 
+pika
+
 fabio
 h5py
 hdf5plugin
