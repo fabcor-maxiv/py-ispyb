@@ -26,7 +26,7 @@ def get_dewars(
         .join(models.Dewar.Shipping)
         .options(joinedload(models.Dewar.Shipping))
         .join(models.Proposal, models.Proposal.proposalId == models.Shipping.proposalId)
-        .outerjoin(models.Container)
+        .outerjoin(models.Container, models.Container.dewarId == models.Dewar.dewarId)
         .group_by(models.Dewar.dewarId)
         .order_by(models.Dewar.dewarId)
     )
