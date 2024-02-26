@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from ispyb import models
 
+from pyispyb.core.schemas.sessions import SessionBase
+
 d = models.Dewar
 
 
@@ -19,12 +21,15 @@ class ShippingCreate(BaseModel):
     shippingName: str = Field(title="Name")
     sendingLabContactId: int = Field(title="Sending Lab Contact")
     returnLabContactId: int = Field(title="Return Lab Contact")
+    shippingStatus: str = Field(title="Shipping Status")
     safetyLevel: SafetyLevelEnum = Field(title="Safety Level", default="GREEN")
     comments: Optional[str] = Field(title="Comments")
 
 
 class ShippingMetaData(BaseModel):
     dewars: int = Field(description="Number of dewars")
+    samples: Optional[int] = Field(description="Number of samples")
+    sessions: list[SessionBase] | None = Field(description="Sessions")
 
 
 class ShippingLabContactPerson(BaseModel):
@@ -51,6 +56,7 @@ class Shipping(ShippingCreate):
     sendingLabContactId: Optional[int] = Field(title="Sending Lab Contact")
     returnLabContactId: Optional[int] = Field(title="Return Lab Contact")
     safetyLevel: Optional[SafetyLevelEnum] = Field(title="Safety Level")
+    shippingStatus: str = Field(title="Shipping Status")
 
     metadata: Optional[ShippingMetaData] = Field(alias="_metadata")
 

@@ -19,14 +19,21 @@ def get_shippings(
     proposalId: Optional[int] = None,
     withAuthorization: bool = True,
 ) -> Paged[models.Shipping]:
-    metadata = {"dewars": func.count(distinct(models.Dewar.dewarId))}
+    metadata = {
+        "dewars": func.count(distinct(models.Dewar.dewarId)),
+        "samples": func.count(distinct(models.BLSample.blSampleId)),
+    }
 
     query = (
         db.session.query(models.Shipping, *metadata.values())
         .options(joinedload(models.Shipping.LabContact))
         .options(joinedload(models.Shipping.LabContact1))
         .join(models.Proposal, models.Proposal.proposalId == models.Shipping.proposalId)
-        .outerjoin(models.Dewar)
+        .outerjoin(models.Dewar, models.Dewar.shippingId == models.Shipping.shippingId)
+        .outerjoin(models.Container, models.Container.dewarId == models.Dewar.dewarId)
+        .outerjoin(
+            models.BLSample, models.BLSample.containerId == models.Container.containerId
+        )
         .group_by(models.Shipping.shippingId)
     )
 
@@ -45,6 +52,50 @@ def get_shippings(
     total = query.count()
     query = page(query, skip=skip, limit=limit)
     results = with_metadata(query.all(), list(metadata.keys()))
+
+    sessions_query = (
+        db.session.query(
+            models.BLSession,
+            models.BLSession.sessionId,
+            models.BLSession.startDate,
+            models.BLSession.endDate,
+            models.Shipping.shippingId,
+        )
+        .join(
+            models.t_ShippingHasSession,
+            models.t_ShippingHasSession.columns["sessionId"]
+            == models.BLSession.sessionId,
+        )
+        .join(
+            models.Shipping,
+            models.Shipping.shippingId
+            == models.t_ShippingHasSession.columns["shippingId"],
+        )
+    )
+    if shippingId:
+        sessions_query = sessions_query.filter(models.Shipping.shippingId == shippingId)
+
+    if proposal:
+        sessions_query = sessions_query.join(
+            models.Proposal, models.Proposal.proposalId == models.BLSession.proposalId
+        )
+        sessions_query = sessions_query.filter(models.Proposal.proposal == proposal)
+
+    if proposalId:
+        sessions_query = sessions_query.join(
+            models.Proposal, models.Proposal.proposalId == models.BLSession.proposalId
+        )
+        sessions_query = sessions_query.filter(models.Proposal.proposalId == proposalId)
+
+    sessions = sessions_query.order_by(models.BLSession.startDate.desc()).all()
+
+    for result in results:
+        sessions_array = []
+        for session in sessions:
+            session_dict = session._asdict()
+            if session_dict["shippingId"] == result.shippingId:
+                sessions_array.append(session_dict["ModifiedBLSession"])
+        result._metadata["sessions"] = sessions_array
 
     return Paged(total=total, results=results, skip=skip, limit=limit)
 
