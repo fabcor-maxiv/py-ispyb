@@ -54,6 +54,7 @@ class Settings(BaseSettings):
 
     sqlalchemy_database_uri: str
     query_debug: bool
+    pyispyb_debug: bool
 
     auth = {}
     auth_config: str
@@ -68,6 +69,14 @@ class Settings(BaseSettings):
 
     # Map file paths in the database to a different root directory
     path_map: str = None
+
+    rabbitmq_host: str
+    rabbitmq_port: int
+    rabbitmq_queue: str
+    rabbitmq_user: str
+    rabbitmq_pass: str
+    rabbitmq_routing_key: str
+    test_sync: bool
 
     class Config:
         env_file = get_env_file()
@@ -95,7 +104,10 @@ class LogConfig(BaseModel):
 
     LOGGER_NAME: str = "pyispyb"
     LOG_FORMAT: str = "%(levelprefix)s | %(asctime)s | %(name)s | %(message)s"
-    LOG_LEVEL: str = "INFO"
+    if settings.pyispyb_debug:
+        LOG_LEVEL: str = "DEBUG"
+    else:
+        LOG_LEVEL: str = "INFO"
 
     version = 1
     disable_existing_loggers = False

@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 import time
 from typing import Any
@@ -8,11 +9,17 @@ from ispyb import models
 from pyispyb.app.extensions.database.session import engine
 from ..modules.persons import get_persons
 from ..schemas import userportalsync as schema
+from ...config import settings
 from pyispyb.app.utils import timed
 from pyispyb.core.modules.utils import encode_external_id, decode_external_id
+from ..modules.admin import groups as crud
+
+import pika
 
 
 logger = logging.getLogger("ispyb")
+
+USER_USERGROUP = "user"
 
 
 def sync_proposal(proposal: schema.UserPortalProposalSync) -> float:
@@ -61,13 +68,112 @@ def sync_proposal(proposal: schema.UserPortalProposalSync) -> float:
         # https://stackoverflow.com/questions/65699977/fastapi-sqlalchemy-how-to-manage-transaction-session-and-multiple-commits
         session.commit()
     except Exception as e:
-        logger.debug(f"sync_proposal exception: {e}")
+        logger.exception("sync_proposal exception")
         session.rollback()
         raise Exception(e)
     finally:
         session.close()
     took = round(time.time() - start, 3)
     return took
+
+
+def create_sync_message(proposal: schema.UPProposal):
+    """
+    Create a rabbitMQ message to get all the data needed to call the sync proposal function
+    """
+    start = time.time()
+    rmq_user = ""
+    rmq_pass = None
+    rmq_host = ""
+    rmq_port = 5672
+    rmq_queue = ""
+
+    logger.info("Getting RabbitMQ settings")
+    if settings.rabbitmq_host:
+        rmq_host = settings.rabbitmq_host
+        rmq_port = settings.rabbitmq_port
+        rmq_queue = settings.rabbitmq_queue
+        rmq_user = settings.rabbitmq_user
+        rmq_pass = settings.rabbitmq_pass
+        test_sync = settings.test_sync
+        routing_key = settings.rabbitmq_routing_key
+    else:
+        raise ValueError("Correct RabbitMQ settings not found")
+    try:
+        connection = init_connection(rmq_user, rmq_pass, rmq_host, rmq_port)
+        if connection is not None:
+            channel = init_channel(connection, rmq_queue)
+            message = {
+                "action": "syncProposal",
+                "proposal": proposal,
+                "site": "MAXIV",
+                "test": test_sync,
+                "beamline": "BioMAX",
+            }
+            logger.debug(f"Sending message to the RabbitMQ queue {rmq_queue}")
+            logger.debug(f"Message to be sent to RabbitMQ: {json.dumps(message)}")
+            message_properties = pika.BasicProperties(
+                priority=5, delivery_mode=pika.DeliveryMode.Persistent
+            )
+
+            channel.basic_publish(
+                exchange="",
+                routing_key=routing_key,
+                body=json.dumps(message),
+                properties=message_properties,
+            )
+            logger.info(
+                f"Message to synchronize proposal {proposal} has been sent to the RabbitMQ server"
+            )
+            connection.close()
+        else:
+            raise ValueError(
+                f"Can't connect to rabbitmq server {rmq_host} at port {rmq_port}"
+            )
+    except Exception:
+        logger.exception(
+            f"Can't connect to rabbitmq server {rmq_host} at port {rmq_port}"
+        )
+    took = round(time.time() - start, 3)
+    return took
+
+
+def init_connection(
+    rmq_user: str, rmq_pass: str, rmq_host: str, rmq_port: int
+) -> pika.BlockingConnection | None:
+    credentials = pika.credentials.PlainCredentials(
+        rmq_user, rmq_pass, erase_on_connect=False
+    )
+    try:
+        logger.debug(f"Connecting to the RabbitMQ server {rmq_host}")
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=rmq_host, port=rmq_port, credentials=credentials
+            )
+        )
+        return connection
+    except Exception:
+        logger.exception(
+            f"Can't connect to rabbitmq server {rmq_host} at port {rmq_port}"
+        )
+    return None
+
+
+def init_channel(
+    connection: pika.BlockingConnection, rmq_queue: str
+) -> pika.adapters.blocking_connection.BlockingChannel:
+    channel = connection.channel()
+    res = channel.queue_declare(
+        queue=rmq_queue,
+        passive=False,
+        durable=True,
+        exclusive=False,
+        auto_delete=False,
+        arguments={"x-queue-type": "classic"},
+    )
+    callback_queue = res.method.queue
+    logger.debug(f"Queue returned is {callback_queue}")
+    return channel
 
 
 class UserPortalSync(object):
@@ -276,10 +382,26 @@ class UserPortalSync(object):
                 copy_source_person["externalId"] = encode_external_id(
                     sourcePerson["externalId"]
                 )
+
         person = models.Person(**copy_source_person)
         self.session.add(person)
         # Flush to get the new personId
         self.session.flush()
+
+        # Add the permissions to see the own proposals and own session to the user
+        user_user_group = (
+            self.session.query(models.UserGroup)
+            .filter(models.UserGroup.name == USER_USERGROUP)
+            .first()
+        )
+
+        try:
+            crud.add_person_to_group(person.personId, user_user_group.userGroupId)
+        except Exception:
+            logger.exception(
+                "An error occurred adding user permissions to the new person"
+            )
+
         # Add the personId to a list to be used later to create the relation to proposalHasPerson/Session_has_Person
         if person_type == "proposal":
             self.proposal_person_ids.append(person.personId)
@@ -348,7 +470,7 @@ class UserPortalSync(object):
         # Check to update persons existing in the DB
         to_add_persons = self.check_persons(sourcePersons, person_type)
         # Second add new persons
-        if to_add_persons:
+        if to_add_persons and len(to_add_persons) > 0:
             logger.debug(
                 f"There are {len(to_add_persons)} person/s to add for type {person_type}"
             )
@@ -357,6 +479,9 @@ class UserPortalSync(object):
     def create_persons(self, sourcePersons: dict[str, Any], person_type: str = None):
         """Process the creation of Persons"""
         for new_person in sourcePersons:
+            logger.debug(
+                f"loop in create_persons function called for new person {new_person}"
+            )
             # Add a new person
             laboratory_id = None
             src_lab = new_person.pop("laboratory")
@@ -442,7 +567,10 @@ class UserPortalSync(object):
                     break
             else:
                 # New persons to be added
+                logger.info(f"new person to be added:{src}")
                 to_add_persons.append(src)
+        logger.debug(f"sourcePersons: {sourcePersons}")
+        logger.debug(f"adding persons: {to_add_persons}")
         return to_add_persons
 
     def update_person_laboratory(self, personId: int, sourcePerson: dict[str, Any]):
@@ -507,33 +635,90 @@ class UserPortalSync(object):
     def check_lab_contacts(self, sourceLabContacts: dict[str, Any]):
         for lab_contact in sourceLabContacts:
             # Check first if lab contact is already on DB
+            logger.debug(f'searching cardName: {lab_contact["cardName"]}')
+
             lb = (
                 self.session.query(models.LabContact)
                 .filter(models.LabContact.proposalId == self.proposalId)
                 .filter(models.LabContact.cardName == lab_contact["cardName"])
                 .first()
             )
+            # Check if the person of the lab contact exsists and the cardName is similar to the one to be inserted and the same proposal
             if not lb:
+                lab_contact_person = lab_contact["person"]
+                logger.debug(f"lab_contact_person: {lab_contact_person}")
+                lab_contact_person_login = lab_contact_person["login"]
+                logger.debug(f"lab_contact_person_login: {lab_contact_person_login}")
+
+                lc_person = (
+                    self.session.query(models.Person)
+                    .filter(models.Person.login == lab_contact_person["login"])
+                    .first()
+                )
+
+                logger.debug(f"lc_person: {lc_person}")
+                if lc_person:
+                    logger.debug(
+                        f"Searching if the person with login {lc_person.login} has a cardname for the proposal {self.proposalId}"
+                    )
+                    lb = (
+                        self.session.query(models.LabContact)
+                        .filter(models.LabContact.proposalId == self.proposalId)
+                        .filter(models.LabContact.personId == lc_person.personId)
+                        .first()
+                    )
+                    if lb:
+                        logger.debug(f"lab_contact: {lab_contact}")
+                        logger.debug("found a card for the same person and proposal")
+                        self.labcontact_person_id = lc_person.personId
+                        lab_contact["labContactId"] = lb.labContactId
+                        logger.debug(
+                            f"labcontact_person_id: {self.labcontact_person_id}"
+                        )
+
+                        self.add_lab_contact(
+                            self.labcontact_person_id, lab_contact, False
+                        )
+                    else:
+                        logger.info(
+                            f"card-name not found for the person {lc_person.login} and proposal {self.proposalId}"
+                        )
+            if not lb:
+                logger.info(f'cardName: {lab_contact["cardName"]} do not exists')
+                logger.debug(f"lab_contact: {lab_contact}")
+
                 # Get the lab contact person
                 lab_contact_person = lab_contact.pop("person")
                 # First check to create/update persons existing in the DB
                 to_add_person = self.check_persons([lab_contact_person], "labcontact")
-                if to_add_person:
+                if to_add_person and len(to_add_person) > 0:
+                    logger.info(
+                        f"person to be added to the labcontact: {to_add_person}"
+                    )
                     self.create_persons(to_add_person, "labcontact")
+
                 # At this point labcontact_person_id has been populated either by
                 # the creation of a new person or by an existing person entity
                 # Add a new LabContact a link it to Person and Proposal
                 logger.debug(
                     f"Creating and linking a new LabContact for personID {self.labcontact_person_id}"
                 )
-                self.add_lab_contact(self.labcontact_person_id, lab_contact)
+                logger.info(
+                    f"add_lab_contact function called for labcontact_person_id: {self.labcontact_person_id} y lab_contact: {lab_contact}"
+                )
+                self.add_lab_contact(self.labcontact_person_id, lab_contact, True)
 
-    def add_lab_contact(self, personId: int, sourceLabContact: dict[str, Any]):
+    def add_lab_contact(
+        self, personId: int, sourceLabContact: dict[str, Any], is_add=True
+    ):
         """Add a new Lab Contact."""
         lab_contact = models.LabContact(**sourceLabContact)
         lab_contact.proposalId = self.proposalId
         lab_contact.personId = personId
-        self.session.add(lab_contact)
+        if is_add:
+            self.session.add(lab_contact)
+        else:
+            self.session.merge(lab_contact)
         # Flush to get the new labContactId
         self.session.flush()
         return lab_contact.labContactId

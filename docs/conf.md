@@ -6,7 +6,7 @@ Ready-to-run preset are defined under `config` for the following environments:
 - `config/test.env`
 - `config/ci.env`
 
-These preset are automatically used when the variable `ISPYB_ENVIRONMENT` is set to any of `dev`, `test` or `ci`.  
+These preset are automatically used when the variable `ISPYB_ENVIRONMENT` is set to any of `dev`, `test` or `ci`.
 This variable is already set to the proper value in the development and test scripts.
 
 If `ISPYB_ENVIRONMENT` is unset or empty, the default provided in `config/.env` will be used.
@@ -21,6 +21,7 @@ SERVICE_NAME=core
 API_ROOT=/ispyb/api/v1
 
 QUERY_DEBUG=false
+PYISPYB_DEBUG=false
 
 JWT_CODING_ALGORITHM=HS256
 TOKEN_EXP_TIME=300
