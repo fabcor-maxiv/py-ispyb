@@ -4,6 +4,7 @@ from typing import Optional
 from ispyb import models
 from sqlalchemy import func, and_, or_, extract, distinct
 from sqlalchemy.orm import joinedload, contains_eager
+from sqlalchemy.sql.functions import current_timestamp
 
 from ...app.extensions.database.definitions import (
     beamlines_from_group,
@@ -13,6 +14,7 @@ from ...app.extensions.database.definitions import (
 from ...app.extensions.database.utils import Paged, page, with_metadata
 from ...app.extensions.database.middleware import db
 from ...core.modules.utils import encode_external_id
+from ..schemas import sessions as schema
 
 
 def get_sessions(
@@ -267,3 +269,69 @@ def get_sessionHasPerson(
     query = page(query_distinct, skip=skip, limit=limit)
 
     return Paged(total=total, results=query.all(), skip=skip, limit=limit)
+
+
+def create_session(
+    session: schema.SessionCreate,
+) -> models.BLSession:
+    """Create new session"""
+
+    # Prepare dicts of values
+    beamline_values = (  # TODO Is this complexity necessary? Or use `session.dict` directly?
+        beamline.dict(exclude_unset=True)
+        if (beamline := getattr(session, "BeamLineSetup", None)) is not None
+        else {}
+    )
+    session_values = session.dict(exclude_unset=True)
+    session_values.pop("BeamLineSetup", None)  # Throw away the nested dict
+    # Set `lastupdate` to current timestamp, otherwise DB sets '0000-00-00 00:00:00'
+    session_values["lastUpdate"] = current_timestamp()
+
+    # Create local record object
+    record = models.BLSession(**session_values)
+    record.BeamLineSetup = models.BeamLineSetup(**beamline_values)
+
+    # Create record in DB
+    db.session.add(record)
+    db.session.commit()
+
+    # Update local copy of record from the DB (to get auto-generated ID)
+    db.session.refresh(record)
+
+    return record
+
+
+def update_session(
+    sessionId: str,
+    session: schema.SessionUpdate,
+) -> models.BLSession:
+    """Update existing session."""
+
+    # Get local copy of current record object from remote DB
+    record = get_sessions(skip=0, limit=1, sessionId=sessionId).first
+    # TODO raise exception if not found?
+
+    # Prepare dicts of values to update
+    beamline_values = (
+        beamline.dict(exclude_unset=True)
+        if (beamline := getattr(session, "BeamLineSetup", None)) is not None
+        else None
+    )
+    session_values = session.dict(exclude_unset=True)
+    session_values["lastUpdate"] = current_timestamp()
+    session_values.pop("BeamLineSetup", None)  # Throw away the nested dict
+
+    # Update local record copy with new values
+    # We can not use
+    # `pyispyb.app.extensions.database.utils.update_model(record, session_values)`
+    for key, value in session_values.items():
+        setattr(record, key, value)
+    if beamline_values is not None:
+        for key, value in beamline_values.items():
+            setattr(record.BeamLineSetup, key, value)
+
+    # Commit local changes to remote DB and refresh local copy
+    db.session.commit()
+    db.session.refresh(record)
+
+    return record

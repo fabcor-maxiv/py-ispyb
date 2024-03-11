@@ -11,18 +11,21 @@ class SessionMetaData(BaseModel):
     energy_scans: Optional[int] = Field(description="Number of energy scans")
     xrf_scans: Optional[int] = Field(description="Number of XRF scans")
     uiGroups: Optional[list[str]] = Field(description="UI groups for this session")
-    persons: int = Field(
+    persons: Optional[int] = Field(
         description="Number of people registered on this session (via SessionHasPerson)"
     )
-    active: bool = Field(description="Whether this session is active")
-    active_soon: bool = Field(
+    active: Optional[bool] = Field(description="Whether this session is active")
+    active_soon: Optional[bool] = Field(
         description="Whether this session is due to start soon or has ended recently (+/-20 min)"
     )
-    sessionTypes: list[str] = Field(description="Session types for this session")
+    sessionTypes: Optional[list[str]] = Field(
+        description="Session types for this session"
+    )
 
 
-class BeamLineSetup(BaseModel):
-    beamLineSetupId: int
+class BeamLineSetupWrite(BaseModel):
+    """Used for CREATE and UPDATE operations (CRUD)."""
+
     synchrotronMode: Optional[str]
     undulatorType1: Optional[str]
     undulatorType2: Optional[str]
@@ -42,33 +45,68 @@ class BeamLineSetup(BaseModel):
     minTransmission: Optional[float]
     CS: Optional[float]
 
+
+class BeamLineSetupRead(BeamLineSetupWrite):
+    """Used for READ operations (CRUD)."""
+
+    beamLineSetupId: int
+
     class Config:
         orm_mode = True
 
 
-class SessionBase(BaseModel):
-    sessionId: int
+class SessionCreate(BaseModel):
+    """Used for CREATE operations (CRUD)."""
+
     proposalId: int
-    session: str
-    proposal: str
 
-    BeamLineSetup: Optional[BeamLineSetup]
-
-    visit_number: Optional[int]
     startDate: datetime
     endDate: datetime
+
+    nbShifts: int
+    scheduled: bool
+
     beamLineName: str
-    beamLineOperator: Optional[str]
-    scheduled: Optional[bool]
-    comments: Optional[str]
-    nbReimbDewars: Optional[int]
+    BeamLineSetup: BeamLineSetupWrite | None
 
-    class Config:
-        orm_mode = True
+    comments: str
 
 
-class Session(SessionBase):
+class SessionUpdate(BaseModel):
+    """Used for UPDATE operations (CRUD)."""
+
+    BeamLineSetup: BeamLineSetupWrite
+
+
+class SessionReadBase(BaseModel):
+    """Used for READ operations (CRUD), without metadata."""
+
     sessionId: int
+    session: str
+
+    proposalId: int
+    proposal: str
+
+    startDate: datetime
+    endDate: datetime
+
+    lastUpdate: datetime | None
+
+    nbShifts: int | None
+    scheduled: bool
+    visit_number: int | None
+
+    beamLineName: str
+    beamLineOperator: str | None
+    BeamLineSetup: BeamLineSetupRead | None
+
+    comments: str | None
+
+    nbReimbDewars: int | None
+
+
+class SessionRead(SessionReadBase):
+    """Used for READ operations (CRUD), with metadata."""
 
     metadata: SessionMetaData = Field(alias="_metadata")
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from ispyb import models
 
-from pyispyb.core.schemas.sessions import SessionBase
+from pyispyb.core.schemas.sessions import SessionReadBase
 
 d = models.Dewar
 
@@ -29,7 +29,7 @@ class ShippingCreate(BaseModel):
 class ShippingMetaData(BaseModel):
     dewars: int = Field(description="Number of dewars")
     samples: Optional[int] = Field(description="Number of samples")
-    sessions: list[SessionBase] | None = Field(description="Sessions")
+    sessions: list[SessionReadBase] | None = Field(description="Sessions")
 
 
 class ShippingLabContactPerson(BaseModel):

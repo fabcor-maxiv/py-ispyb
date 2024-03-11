@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, HTTPException, Query, status
 from ispyb import models
 
 from pyispyb.dependencies import pagination
@@ -14,7 +14,7 @@ from ..schemas.utils import paginated
 
 
 router = AuthenticatedAPIRouter(prefix="/sessions", tags=["Sessions"])
-PaginatedSession = paginated(schema.Session)
+PaginatedSession = paginated(schema.SessionRead)
 
 
 @router.get("", response_model=PaginatedSession)
@@ -77,7 +77,7 @@ def get_sessions_for_beamline_group(
 
 @router.get(
     "/{sessionId}",
-    response_model=schema.Session,
+    response_model=schema.SessionRead,
     responses={404: {"description": "No such session"}},
 )
 def get_session(
@@ -94,3 +94,28 @@ def get_session(
         return sessions.first
     except IndexError:
         raise HTTPException(status_code=404, detail="Session not found")
+
+
+@router.post(
+    "",
+    response_model=schema.SessionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_session(session: schema.SessionCreate) -> models.BLSession:
+    """Create a new session."""
+    return crud.create_session(session)
+
+
+@router.patch(
+    "/{sessionId}",
+    response_model=schema.SessionRead,
+    responses={
+        400: {"description": "Could not update session"},
+        404: {"description": "No such session"},
+    },
+)
+def update_session(
+    sessionId: int,
+    session: schema.SessionUpdate,
+):
+    return crud.update_session(sessionId, session)
