@@ -1,8 +1,9 @@
-# import datetime
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
+
+from pyispyb.core.schemas.shipping import ShippingBase
 
 
 class SessionMetaData(BaseModel):
@@ -103,6 +104,8 @@ class SessionReadBase(BaseModel):
     comments: str | None
 
     nbReimbDewars: int | None
+
+    Shipping: list[ShippingBase]
 
 
 class SessionRead(SessionReadBase):

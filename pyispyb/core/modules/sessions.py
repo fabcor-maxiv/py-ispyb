@@ -35,7 +35,7 @@ def get_sessions(
     month: Optional[int] = None,
     year: Optional[int] = None,
     withAuthorization: bool = True,
-) -> Paged[models.BLSession]:
+) -> Paged[schema.SessionRead]:
     metadata = {
         "active": func.IF(
             and_(
@@ -61,6 +61,7 @@ def get_sessions(
         db.session.query(models.BLSession, *metadata.values())
         .outerjoin(models.SessionType)
         .options(joinedload(models.BLSession.BeamLineSetup))
+        .options(joinedload(models.BLSession.Shipping))
         .join(models.Proposal)
         .outerjoin(models.SessionHasPerson)
         .options(contains_eager(models.BLSession.Proposal))

@@ -5,8 +5,6 @@ from pydantic import BaseModel, Field
 
 from ispyb import models
 
-from pyispyb.core.schemas.sessions import SessionReadBase
-
 d = models.Dewar
 
 
@@ -29,7 +27,7 @@ class ShippingCreate(BaseModel):
 class ShippingMetaData(BaseModel):
     dewars: int = Field(description="Number of dewars")
     samples: Optional[int] = Field(description="Number of samples")
-    sessions: list[SessionReadBase] | None = Field(description="Sessions")
+    sessions: list['pyispyb.core.schemas.sessions.SessionReadBase'] | None = Field(description="Sessions")
 
 
 class ShippingLabContactPerson(BaseModel):
@@ -49,16 +47,15 @@ class ShippingLabContact(BaseModel):
         orm_mode = True
 
 
-class Shipping(ShippingCreate):
+class ShippingBase(ShippingCreate):
+
     shippingId: int
     bltimeStamp: Optional[datetime] = Field(title="Created at")
 
     sendingLabContactId: Optional[int] = Field(title="Sending Lab Contact")
     returnLabContactId: Optional[int] = Field(title="Return Lab Contact")
     safetyLevel: Optional[SafetyLevelEnum] = Field(title="Safety Level")
-    shippingStatus: str = Field(title="Shipping Status")
-
-    metadata: Optional[ShippingMetaData] = Field(alias="_metadata")
+    shippingStatus: Optional[str] = Field(title="Shipping Status")
 
     LabContact: Optional[ShippingLabContact] = Field(title="Return Lab Contact")
     LabContact1: Optional[ShippingLabContact] = Field(title="Sending Lab Contact")
@@ -66,6 +63,10 @@ class Shipping(ShippingCreate):
     class Config:
         orm_mode = True
         json_encoders = {datetime: lambda obj: obj.isoformat() + "+00:00"}
+
+
+class Shipping(ShippingBase):
+    metadata: Optional[ShippingMetaData] = Field(alias="_metadata")
 
 
 class Dewar(BaseModel):
